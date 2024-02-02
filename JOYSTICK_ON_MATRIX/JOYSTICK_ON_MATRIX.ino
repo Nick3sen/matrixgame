@@ -59,30 +59,30 @@ void loop()
   Shoot();
   switch (LEVEL)
   {
-    case 0:
+  case 0:
+  {
+    lcd.setCursor(0, 0);
+    lcd.print("GAME OVER");
+    lcd.setCursor(0, 1);
+    lcd.print("PRESS BUTTON");
+    SCORE = 0;
+    if (bValue == HIGH)
     {
-      lcd.setCursor(0, 0);
-      lcd.print("GAME OVER");
-      lcd.setCursor(0, 1);
-      lcd.print("PRESS BUTTON");
-      SCORE = 0;
-      if (bValue == HIGH)
-      {
-        LEVEL = 1;
-        lcd.clear();
-      }
-      break;
+      LEVEL = 1;
+      lcd.clear();
     }
-    case 1:
-    {
-      levelOne();
-      break;
-    }
-    case 2:
-    {
-      levelTwo();
-      break;
-    }
+    break;
+  }
+  case 1:
+  {
+    levelOne();
+    break;
+  }
+  case 2:
+  {
+    levelTwo();
+    break;
+  }
   }
   visual();
 }
@@ -210,16 +210,20 @@ void NextLevel()
 
 void hit()
 {
-  if (yShoot == yEnemy && xShoot == xEnemy) // if the position of the bullet and the enemy are the same the enemy dies
+  if (yShoot == yEnemy)
   {
-    Serial.print("Hit!");
-    SCORE = SCORE + 1;
-    respawnEnemy();
-  }
-  if (xShoot != xEnemy && yShoot == yEnemy)
-  {
-    SCORE = SCORE - 1;
-    respawnEnemy();
+
+    if (xShoot == xEnemy) // if the position of the bullet and the enemy are the same the enemy dies
+    {
+      Serial.print("Hit!");
+      SCORE = SCORE + 1;
+      respawnEnemy();
+    }
+    else
+    {
+      SCORE = SCORE - 1;
+      respawnEnemy();
+    }
   }
 }
 
