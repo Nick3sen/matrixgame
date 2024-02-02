@@ -1,0 +1,5 @@
+{
+    "board": "arduino:avr:uno",
+    "port": "COM3",
+    "sketch": "JOYSTICK_ON_MATRIX\\JOYSTICK_ON_MATRIX.ino"
+}
