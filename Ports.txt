@@ -37,3 +37,5 @@ VRY : de pin aangeven
 
 MOGELIJKE UITBREIDING:
 machine gun
+
+kogel eigen leven laten gaan, kogel uit scherm laten gaan, eigen functie voor kogel dat je ondertussen kan bewegen.

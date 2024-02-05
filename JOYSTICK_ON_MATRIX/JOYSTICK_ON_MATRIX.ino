@@ -56,7 +56,7 @@ void loop()
 {
   movement();
   points();
-  Shoot();
+  shoot();
   switch (LEVEL)
   {
   case 0:
@@ -136,25 +136,30 @@ void visual()
   Serial.print(yEnemy);
 }
 
-void Shoot()
+void shoot()
 {
   bValue = digitalRead(button);
   if (bValue == HIGH)
   {
-    xShoot = x;
-    yShoot = y + 1;
-    digitalWrite(buzzer, HIGH);
+    bullet();
+  }
+}
+
+void bullet()
+{
+  xShoot = x;
+  yShoot = y + 1;
+  digitalWrite(buzzer, HIGH);
+  delay(40);
+  digitalWrite(buzzer, LOW);
+  for (int i = 0; i < HEIGHT - 2; i++)
+  {
+    lc.setLed(0, xShoot, yShoot, true);
+    delay(10);
+    lc.setLed(0, xShoot, yShoot, false);
+    yShoot++;
     delay(40);
-    digitalWrite(buzzer, LOW);
-    for (int i = 0; i < HEIGHT - 2; i++)
-    {
-      lc.setLed(0, xShoot, yShoot, true);
-      delay(10);
-      lc.setLed(0, xShoot, yShoot, false);
-      yShoot++;
-      delay(40);
-      hit();
-    }
+    hit();
   }
 }
 
@@ -190,7 +195,7 @@ void startup() // make a startup animation when startin up
   }
 }
 
-void NextLevel()
+void nextLevel()
 { // when going to the next level thr ship "flies" to the next area in an animation
   lc.clearDisplay(0);
   for (int b; b < HEIGHT; b++)
@@ -235,15 +240,15 @@ void respawnEnemy()
   yShoot = 0;
 }
 
-void LevelOneEnemy() // Level one enemy is static
+void levelOneEnemy() // Level one enemy is static, naamgeving is vrij vreemd, functies met kleine letter beginnen
 {
   lc.setLed(0, xEnemy, yEnemy, true);
 }
 
-void LevelTwoEnemy()
+void levelTwoEnemy()
 { // Level two enemy moves every 1,5 seconds, using millis
   unsigned long currentmillis = millis();
-  LevelOneEnemy();
+  levelOneEnemy();
   if (currentmillis - previousmillis > 1500)
   {
     xEnemy = random(0, WIDTH - 1);
@@ -255,9 +260,9 @@ void LevelTwoEnemy()
 void levelOne()
 { // level one
   screen();
-  LevelOneEnemy();
+  levelOneEnemy();
   minscore = 0;
-  GameOver();
+  gameOver();
   if (SCORE > 10)
   {
     LEVEL = 2;
@@ -267,12 +272,12 @@ void levelOne()
 void levelTwo()
 { // level two
   screen();
-  LevelTwoEnemy();
+  levelTwoEnemy();
   minscore = 10;
-  GameOver();
+  gameOver();
 }
 
-void GameOver()
+void gameOver()
 {
   if (SCORE < minscore)
   {
