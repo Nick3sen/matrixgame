@@ -79,6 +79,7 @@ void loop()
     score = 0;
     if (bValue == HIGH)
     {
+      isShooting = false;
       level = 1;
       hits = 0;
       lcd.clear();
