@@ -7,15 +7,17 @@
 #include "LedControl.h"
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-#define VRX A0    // Arduino pin connected to VRX pin
-#define VRY A1    // Arduino pin connected to VRY pin
-#define button 10 // Arduino pin connected to button pin
-#define buzzer 4  // Arduino pin connected to button pin
-
+#define VRX A0                             // Arduino pin connected to VRX pin
+#define VRY A1                             // Arduino pin connected to VRY pin
+#define button 10                          // Arduino pin connected to button pin
+#define buzzer 4                           // Arduino pin connected to button pin
+#define ledgreen 5                         // Arduino pin connected to the green led
+#define ledorange 6                        // Arduino pin connected to the orange led
+#define ledred 7                           // Arduino pin connected to the red led
 LedControl lc = LedControl(11, 13, 12, 1); // defining the used pins for the matrix
 
-int HEIGHT = 8; // Height matrix
-int WIDTH = 8;  // Width matrix
+const int HEIGHT = 8; // Height matrix
+const int WIDTH = 8;  // Width matrix
 
 unsigned long delaytime = 7;
 int xValue = 0;    // value of the X axis on joystick
@@ -29,10 +31,12 @@ int y;             // y value player
 int xEnemy;        // x position enemy
 int yEnemy;        // y position enemy
 int bValue;        // button value
-int SCORE = 0;     // score
-int HIGHSCORE = 0; // highscore
-long previousmillis = 0;
-int LEVEL = 1;
+int score = 0;     // score
+int highscore = 0; // highscore
+int hits = 0;      // the amount of lives you've wasted
+int enemySpeed = 1500; // The default speed of the enemy in higher levels
+unsigned long previousmillis = 0;
+int level = 1;
 int minscore = 0;
 
 void setup()
@@ -44,6 +48,9 @@ void setup()
   Serial.begin(9600);
   pinMode(button, INPUT);
   pinMode(buzzer, OUTPUT);
+  pinMode(ledgreen, OUTPUT);
+  pinMode(ledorange, OUTPUT);
+  pinMode(ledred, OUTPUT);
   lcd.init(); // initialize the lcd
   lcd.backlight();
   lcd.clear();
@@ -57,7 +64,7 @@ void loop()
   movement();
   points();
   shoot();
-  switch (LEVEL)
+  switch (level)
   {
   case 0:
   {
@@ -65,10 +72,10 @@ void loop()
     lcd.print("GAME OVER");
     lcd.setCursor(0, 1);
     lcd.print("PRESS BUTTON");
-    SCORE = 0;
+    score = 0;
     if (bValue == HIGH)
     {
-      LEVEL = 1;
+      level = 1;
       lcd.clear();
     }
     break;
@@ -152,7 +159,7 @@ void bullet()
   digitalWrite(buzzer, HIGH);
   delay(40);
   digitalWrite(buzzer, LOW);
-  for (int i = 0; i < HEIGHT - 2; i++)
+  for (int i = 0; i < HEIGHT; i++)
   {
     lc.setLed(0, xShoot, yShoot, true);
     delay(10);
@@ -168,11 +175,11 @@ void screen()
   lcd.setCursor(0, 0);  // move cursor to   (Column 0, Row 0)
   lcd.print("SCORE :"); // print message at (0, 0)
   lcd.setCursor(9, 0);
-  lcd.print(SCORE);
+  lcd.print(score);
   lcd.setCursor(0, 1);      // move cursor to   (2, 1)
   lcd.print("HIGHSCORE :"); // print message at (2, 1)
   lcd.setCursor(13, 1);
-  lcd.print(HIGHSCORE);
+  lcd.print(highscore);
 }
 
 void startup() // make a startup animation when startin up
@@ -192,6 +199,10 @@ void startup() // make a startup animation when startin up
         delay(delaytime);
       }
     }
+  }
+  for (int i = 5; i < 8; i++)
+  {
+    digitalWrite(i, HIGH);
   }
 }
 
@@ -215,29 +226,30 @@ void nextLevel()
 
 void hit()
 {
-  if (yShoot == yEnemy)
+  if (xShoot == xEnemy && yShoot == yEnemy) // if the position of the bullet and the enemy are the same the enemy dies
   {
-
-    if (xShoot == xEnemy) // if the position of the bullet and the enemy are the same the enemy dies
-    {
-      Serial.print("Hit!");
-      SCORE = SCORE + 1;
-      respawnEnemy();
-    }
-    else
-    {
-      SCORE = SCORE - 1;
-      respawnEnemy();
-    }
+    Serial.print("Hit!");
+    score = score + 1;
+    respawnEnemy();
+  }
+  if (yShoot == HEIGHT)
+  {
+    score = score - 1;
+    hits = hits + 1;
+    respawnEnemy();
   }
 }
 
 void respawnEnemy()
 {
-  xEnemy = random(0, WIDTH - 1);
-  yEnemy = random(HEIGHT - 3, HEIGHT - 1);
-  xShoot = 0;
-  yShoot = 0;
+  long unsigned currentmillis = millis();
+  if (currentmillis - previousmillis > 1000)
+  {
+    xEnemy = random(0, WIDTH - 1);
+    yEnemy = random(HEIGHT - 3, HEIGHT - 1);
+    xShoot = 0;
+    yShoot = 0;
+  }
 }
 
 void levelOneEnemy() // Level one enemy is static, naamgeving is vrij vreemd, functies met kleine letter beginnen
@@ -262,10 +274,14 @@ void levelOne()
   screen();
   levelOneEnemy();
   minscore = 0;
-  gameOver();
-  if (SCORE > 10)
+  lives();
+  if (score < minscore)
   {
-    LEVEL = 2;
+    gameOver();
+  }
+  if (score > 10)
+  {
+    level = 2;
   }
 }
 
@@ -274,22 +290,48 @@ void levelTwo()
   screen();
   levelTwoEnemy();
   minscore = 10;
-  gameOver();
+  lives();
+  if (score < minscore)
+  {
+    gameOver();
+  }
+}
+
+void lives()
+{
+  switch (hits)
+  {
+  case 0:
+  {
+    break;
+  }
+  case 1: // you lost one of three lives
+  {
+    digitalWrite(ledgreen, LOW);
+    break;
+  }
+  case 2: // you lost two of three lives
+  {
+    digitalWrite(ledorange, LOW);
+    break;
+  }
+  case 3:
+    digitalWrite(ledred, LOW);
+    gameOver();
+    break;
+  }
 }
 
 void gameOver()
 {
-  if (SCORE < minscore)
-  {
-    LEVEL = 0;
-    lcd.clear();
-  }
+  level = 0;
+  lcd.clear();
 }
 
 void points()
 {
-  if (SCORE > HIGHSCORE)
+  if (score > highscore)
   {
-    HIGHSCORE = SCORE;
+    highscore = score;
   }
 }
