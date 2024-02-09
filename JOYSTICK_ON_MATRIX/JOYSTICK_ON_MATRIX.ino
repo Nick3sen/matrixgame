@@ -7,44 +7,46 @@
 #include "LedControl.h"
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-#define VRX A0                             // Arduino pin connected to VRX pin
-#define VRY A1                             // Arduino pin connected to VRY pin
-#define button 10                          // Arduino pin connected to button pin
-#define buzzer 4                           // Arduino pin connected to button pin
-#define ledgreen 5                         // Arduino pin connected to the green led
-#define ledorange 6                        // Arduino pin connected to the orange led
-#define ledred 7                           // Arduino pin connected to the red led
-LedControl lc = LedControl(11, 13, 12, 1); // defining the used pins for the matrix
+#define VRX A0                                 // Arduino pin connected to VRX pin
+#define VRY A1                                 // Arduino pin connected to VRY pin
+#define button 10                              // Arduino pin connected to button pin
+#define buzzer 4                               // Arduino pin connected to button pin
+#define ledgreen 5                             // Arduino pin connected to the green led
+#define ledorange 6                            // Arduino pin connected to the orange led
+#define ledred 7                               // Arduino pin connected to the red led
+LedControl matrix = LedControl(11, 13, 12, 1); // defining the used pins for the matrix
 
 const int HEIGHT = 8; // Height matrix
 const int WIDTH = 8;  // Width matrix
 
 unsigned long delaytime = 7;
-int xValue = 0;    // value of the X axis on joystick
-int yValue = 0;    // value of the Y axis on joystick
-int xWaarde = 0;   // mapped x value
-int yWaarde = 0;   // mapped y value
-int xShoot;        // x value bullet
-int yShoot;        // y value bullet
-int x = 4;         // x value player
-int y;             // y value player
-int xEnemy;        // x position enemy
-int yEnemy;        // y position enemy
-int bValue;        // button value
-int score = 0;     // score
-int highscore = 0; // highscore
-int hits = 0;      // the amount of lives you've wasted
+int xValue = 0;        // value of the X axis on joystick
+int yValue = 0;        // value of the Y axis on joystick
+int xWaarde = 0;       // mapped x value
+int yWaarde = 0;       // mapped y value
+int xShoot;            // x value bullet
+int yShoot;            // y value bullet
+int x = 4;             // x value player
+int y;                 // y value player
+int xEnemy;            // x position enemy
+int yEnemy;            // y position enemy
+int bValue;            // button value
+int score = 0;         // score
+int highscore = 0;     // highscore
+int hits = 0;          // the amount of lives you've wasted
 int enemySpeed = 1500; // The default speed of the enemy in higher levels
-unsigned long previousmillis = 0;
+unsigned long lastBulletUpdate = 0;
+unsigned long lastenemyrespawn = 0;
 int level = 1;
 int minscore = 0;
+bool isShooting = false;
 
 void setup()
 {
   randomSeed(analogRead(A3));
-  lc.shutdown(0, false);
-  lc.setIntensity(0, 8);
-  lc.clearDisplay(0);
+  matrix.shutdown(0, false);
+  matrix.setIntensity(0, 8);
+  matrix.clearDisplay(0);
   Serial.begin(9600);
   pinMode(button, INPUT);
   pinMode(buzzer, OUTPUT);
@@ -56,14 +58,16 @@ void setup()
   lcd.clear();
   xEnemy = random(0, WIDTH - 1);       // The x position of the enemy gets chosen random between the given parameters
   yEnemy = random(HEIGHT - 3, HEIGHT); // The y position of the enemy gets chosen random between the given parameters
-  startup();
+  // startup();
 }
 
 void loop()
 {
+  matrix.clearDisplay(0);
   movement();
-  points();
+  bullet();
   shoot();
+  points();
   switch (level)
   {
   case 0:
@@ -76,6 +80,7 @@ void loop()
     if (bValue == HIGH)
     {
       level = 1;
+      hits = 0;
       lcd.clear();
     }
     break;
@@ -118,11 +123,11 @@ void movement()
     x = x + 1;
   }
 
-  lc.clearDisplay(0); // Creating the little spaceship
-  lc.setLed(0, x, y, true);
-  lc.setLed(0, x + 1, y, true);
-  lc.setLed(0, x - 1, y, true);
-  lc.setLed(0, x, y + 1, true);
+  // Creating the little spaceship
+  matrix.setLed(0, x, y, true);
+  matrix.setLed(0, x + 1, y, true);
+  matrix.setLed(0, x - 1, y, true);
+  matrix.setLed(0, x, y + 1, true);
 }
 
 void visual()
@@ -145,27 +150,34 @@ void visual()
 
 void shoot()
 {
+  if (isShooting)
+    return;
   bValue = digitalRead(button);
   if (bValue == HIGH)
   {
-    bullet();
+    isShooting = true;
+    xShoot = x;
+    yShoot = y + 1;
+    digitalWrite(buzzer, HIGH);
+    delay(40);
+    digitalWrite(buzzer, LOW);
   }
 }
 
 void bullet()
 {
-  xShoot = x;
-  yShoot = y + 1;
-  digitalWrite(buzzer, HIGH);
-  delay(40);
-  digitalWrite(buzzer, LOW);
-  for (int i = 0; i < HEIGHT; i++)
+  if (!isShooting)
+    return;
+
+  // isShooting has to be true
+  matrix.setLed(0, xShoot, yShoot, true);
+
+  long unsigned currentmillis = millis();
+  if (currentmillis - lastBulletUpdate > 69)
   {
-    lc.setLed(0, xShoot, yShoot, true);
-    delay(10);
-    lc.setLed(0, xShoot, yShoot, false);
+    matrix.setLed(0, xShoot, yShoot, false);
+    lastBulletUpdate = currentmillis;
     yShoot++;
-    delay(40);
     hit();
   }
 }
@@ -189,13 +201,13 @@ void startup() // make a startup animation when startin up
     for (int col = 0; col < 8; col++)
     {
       delay(delaytime);
-      lc.setLed(0, row, col, true);
+      matrix.setLed(0, row, col, true);
       delay(delaytime);
       for (int i = 0; i < col; i++)
       {
-        lc.setLed(0, row, col, false);
+        matrix.setLed(0, row, col, false);
         delay(delaytime);
-        lc.setLed(0, row, col, true);
+        matrix.setLed(0, row, col, true);
         delay(delaytime);
       }
     }
@@ -208,18 +220,18 @@ void startup() // make a startup animation when startin up
 
 void nextLevel()
 { // when going to the next level thr ship "flies" to the next area in an animation
-  lc.clearDisplay(0);
+  matrix.clearDisplay(0);
   for (int b; b < HEIGHT; b++)
   {
-    lc.setLed(0, x, b, true);
-    lc.setLed(0, x + 1, b, true);
-    lc.setLed(0, x - 1, b, true);
-    lc.setLed(0, x, b + 1, true);
+    matrix.setLed(0, x, b, true);
+    matrix.setLed(0, x + 1, b, true);
+    matrix.setLed(0, x - 1, b, true);
+    matrix.setLed(0, x, b + 1, true);
     delay(50);
-    lc.setLed(0, x, b, false);
-    lc.setLed(0, x + 1, b, false);
-    lc.setLed(0, x - 1, b, false);
-    lc.setLed(0, x, b + 1, false);
+    matrix.setLed(0, x, b, false);
+    matrix.setLed(0, x + 1, b, false);
+    matrix.setLed(0, x - 1, b, false);
+    matrix.setLed(0, x, b + 1, false);
     delay(50);
   }
 }
@@ -231,41 +243,39 @@ void hit()
     Serial.print("Hit!");
     score = score + 1;
     respawnEnemy();
+    isShooting = false;
   }
   if (yShoot == HEIGHT)
   {
     score = score - 1;
     hits = hits + 1;
     respawnEnemy();
+    isShooting = false;
   }
 }
 
 void respawnEnemy()
 {
-  long unsigned currentmillis = millis();
-  if (currentmillis - previousmillis > 1000)
-  {
-    xEnemy = random(0, WIDTH - 1);
-    yEnemy = random(HEIGHT - 3, HEIGHT - 1);
-    xShoot = 0;
-    yShoot = 0;
-  }
+  xEnemy = random(0, WIDTH - 1);
+  yEnemy = random(HEIGHT - 3, HEIGHT - 1);
+  xShoot = 0;
+  yShoot = 0;
 }
 
 void levelOneEnemy() // Level one enemy is static, naamgeving is vrij vreemd, functies met kleine letter beginnen
 {
-  lc.setLed(0, xEnemy, yEnemy, true);
+  matrix.setLed(0, xEnemy, yEnemy, true);
 }
 
 void levelTwoEnemy()
 { // Level two enemy moves every 1,5 seconds, using millis
   unsigned long currentmillis = millis();
   levelOneEnemy();
-  if (currentmillis - previousmillis > 1500)
+  if (currentmillis - lastenemyrespawn > enemySpeed)
   {
     xEnemy = random(0, WIDTH - 1);
     yEnemy = random(HEIGHT - 3, HEIGHT - 1);
-    previousmillis = currentmillis;
+    lastenemyrespawn = currentmillis;
   }
 }
 
@@ -303,6 +313,10 @@ void lives()
   {
   case 0:
   {
+    for (int i = 5; i < 8; i++)
+    {
+      digitalWrite(i, HIGH);
+    }
     break;
   }
   case 1: // you lost one of three lives
