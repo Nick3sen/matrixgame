@@ -34,9 +34,11 @@ int bValue;            // button value
 int score = 0;         // score
 int highscore = 0;     // highscore
 int hits = 0;          // the amount of lives you've wasted
-int enemySpeed = 1500; // The default speed of the enemy in higher levels
+int enemySpeedOne = 2000; // The default speed of the enemy in higher levels
+int enemySpeedTwo = 1900; // The speed that will decrease every so many levels
 unsigned long lastBulletUpdate = 0;
 unsigned long lastenemyrespawn = 0;
+// unsigned long enemySpeedDecrease = 0;
 int level = 1;
 int minscore = 0;
 bool isShooting = false;
@@ -94,6 +96,11 @@ void loop()
   case 2:
   {
     levelTwo();
+    break;
+  }
+  case 3:
+  {
+    levelThree();
     break;
   }
   }
@@ -268,11 +275,11 @@ void levelOneEnemy() // Level one enemy is static, naamgeving is vrij vreemd, fu
   matrix.setLed(0, xEnemy, yEnemy, true);
 }
 
-void levelTwoEnemy()
+void movinEnemy(int speed)
 { // Level two enemy moves every 1,5 seconds, using millis
   unsigned long currentmillis = millis();
   levelOneEnemy();
-  if (currentmillis - lastenemyrespawn > enemySpeed)
+  if (currentmillis - lastenemyrespawn > speed)
   {
     xEnemy = random(0, WIDTH - 1);
     yEnemy = random(HEIGHT - 3, HEIGHT - 1);
@@ -299,13 +306,32 @@ void levelOne()
 void levelTwo()
 { // level two
   screen();
-  levelTwoEnemy();
+  movinEnemy(enemySpeedOne);
   minscore = 10;
   lives();
   if (score < minscore)
   {
     gameOver();
   }
+  if (score > 30)
+  {
+    level = 3;
+  }
+}
+
+void levelThree(){
+  screen();
+  movinEnemy(enemySpeedTwo);
+  minscore = 30;
+  if (score < minscore)
+  {
+    gameOver();
+  }
+}
+
+void speedIncrease()
+{
+  
 }
 
 void lives()
