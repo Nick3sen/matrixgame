@@ -20,20 +20,20 @@ const int HEIGHT = 8; // Height matrix
 const int WIDTH = 8;  // Width matrix
 
 unsigned long delaytime = 7;
-int xValue = 0;        // value of the X axis on joystick
-int yValue = 0;        // value of the Y axis on joystick
-int xWaarde = 0;       // mapped x value
-int yWaarde = 0;       // mapped y value
-int xShoot;            // x value bullet
-int yShoot;            // y value bullet
-int x = 4;             // x value player
-int y;                 // y value player
-int xEnemy;            // x position enemy
-int yEnemy;            // y position enemy
-int bValue;            // button value
-int score = 0;         // score
-int highscore = 0;     // highscore
-int hits = 0;          // the amount of lives you've wasted
+int xValue = 0;           // value of the X axis on joystick
+int yValue = 0;           // value of the Y axis on joystick
+int xWaarde = 0;          // mapped x value
+int yWaarde = 0;          // mapped y value
+int xShoot;               // x value bullet
+int yShoot;               // y value bullet
+int x = 4;                // x value player
+int y;                    // y value player
+int xEnemy;               // x position enemy
+int yEnemy;               // y position enemy
+int bValue;               // button value
+int score = 0;            // score
+int highscore = 0;        // highscore
+int hits = 0;             // the amount of lives you've wasted
 int enemySpeedOne = 2000; // The default speed of the enemy in higher levels
 int enemySpeedTwo = 1900; // The speed that will decrease every so many levels
 unsigned long lastBulletUpdate = 0;
@@ -319,9 +319,11 @@ void levelTwo()
   }
 }
 
-void levelThree(){
+void levelThree()
+{
   screen();
   movinEnemy(enemySpeedTwo);
+  speedIncrease();
   minscore = 30;
   if (score < minscore)
   {
@@ -331,7 +333,18 @@ void levelThree(){
 
 void speedIncrease()
 {
-  
+  if (score % 10 == 0)
+  {
+    if (enemySpeedTwo == 1000 or enemySpeedTwo < 1000)
+    {
+      enemySpeedTwo = 1000;
+    }
+    else
+    {
+      enemySpeedTwo = enemySpeedTwo - 100;
+      Serial.println(enemySpeedTwo);
+    }
+  }
 }
 
 void lives()
